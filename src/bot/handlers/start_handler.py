@@ -1,10 +1,13 @@
 from aiogram import Router, types
-from aiogram.filters import Command
-from src.bot.keyboards.main_menu import get_main_menu
+from aiogram.filters import CommandStart
+
+from src.bot.keyboards.main_menu import get_main_menu, get_admin_menu
+from src.bot.config import load_config
 
 router = Router()
+config = load_config()
 
-@router.message(Command("start"))
+@router.message(CommandStart())
 async def cmd_start(message: types.Message):
     welcome_text = """
     🏥 <b>Добро пожаловать в стоматологию "Улыбк"!</b> 🦷
@@ -18,9 +21,12 @@ async def cmd_start(message: types.Message):
 
     Выберите действие:
     """
-    
-    # # Проверка на администратора (пример)
-    # if message.from_user.id == YOUR_ADMIN_ID:  # Замените на ваш ID
-    #     await message.answer(welcome_text, parse_mode="HTML", reply_markup=get_admin_menu())
-    # else:
-    #     await message.answer(welcome_text, parse_mode="HTML", reply_markup=get_main_menu())
+
+    # Получаем список админов из строки и преобразуем в числа
+    admin_ids = [int(x.strip()) for x in config.admin_ids.split(",")]
+
+    # Проверяем, является ли пользователь админом
+    if message.from_user.id in admin_ids:
+        await message.answer(welcome_text, reply_markup=get_admin_menu())
+    else:
+        await message.answer(welcome_text, reply_markup=get_main_menu())
